@@ -32,6 +32,20 @@ models:
           - positive_values
 
   - name: dim_hosts_cleansed
+    versions:
+      - v: 1
+        defined_in: dim_hosts_cleansed
+        deprecation_date: 2030-01-01
+      - v: 2
+        columns:
+          - include: '*'
+            exclude: [host_name]
+          - name: host_name
+            description: The name of the host (N/A if not available)
+            data_type: string
+            constraints:
+              - type: not_null
+    latest_version: 2
     columns:
       - name: host_id
         data_tests:
@@ -47,6 +61,25 @@ models:
           - accepted_values:
               arguments:
                 values: ['t', 'f']
+
+  - name: dim_listings_w_hosts
+    tests:
+      - dbt_expectations.expect_table_row_count_to_equal_other_table:
+          compare_model: source('airbnb', 'listings')
+    columns:
+      - name: price
+        tests:
+          - dbt_expectations.expect_column_values_to_be_of_type:  
+              column_type: number
+          - dbt_expectations.expect_column_quantile_values_to_be_between:
+              arguments:
+                quantile: .99
+                min_value: 50
+                max_value: 500
+          - dbt_expectations.expect_column_max_to_be_between:
+              max_value: 10000
+              config: 
+                severity: warn
 
   - name: fct_reviews
     columns:
